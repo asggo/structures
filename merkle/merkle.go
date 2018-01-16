@@ -19,6 +19,21 @@ func (m *Merkle) Equal(m2 *Merkle) bool {
 	return bytes.Equal(m.digest[:], m2.digest[:])
 }
 
+// Diff returns a slice of digests from m2 which are different from those in m1.
+func (m *Merkle) Diff(m2 *Merkle, diffs *[][32]byte) {
+	if m.Equal(m2) {
+		return
+	}
+
+	if m.children[0] == nil {
+		*diffs = append(*diffs, m2.digest)
+	} else {
+		m.children[0].Diff(m2.children[0], diffs)
+		m.children[1].Diff(m2.children[1], diffs)
+	}
+}
+
+
 // Recursively build a Merkle tree using the slice of byte slices.
 func NewMerkle(blocks [][]byte) *Merkle {
 	var data []byte
@@ -44,18 +59,4 @@ func NewMerkle(blocks [][]byte) *Merkle {
 	m.digest = sha256.Sum256(data)
 
 	return m
-}
-
-// Diff returns a slice of digests from m2 which are different from those in m1.
-func (m *Merkle) Diff(m2 *Merkle, diffs *[][32]byte) {
-	if m.Equal(m2) {
-		return
-	}
-
-	if m.children[0] == nil {
-		*diffs = append(*diffs, m2.digest)
-	} else {
-		m.children[0].Diff(m2.children[0], diffs)
-		m.children[1].Diff(m2.children[1], diffs)
-	}
 }
