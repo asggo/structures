@@ -27,9 +27,9 @@ type Node struct {
 // String returns a string representing the Node structure.
 func (n *Node) String() string {
 	s := fmt.Sprintf("Level: %d\nValues: %d\nChildren: %t\nBox: %s\n",
-		n.level, len(n.values), n.children[0]!=nil, n.boundingBox.String())
+		n.level, len(n.values), n.children[0] != nil, n.boundingBox.String())
 
-    if n.children[0] != nil {
+	if n.children[0] != nil {
 		for i, _ := range n.children {
 			s = s + n.children[i].String()
 		}
@@ -48,7 +48,6 @@ func (n *Node) Count(count *int) {
 			n.children[i].Count(count)
 		}
 	}
-
 }
 
 // NodeCount recursively counts all of the nodes in the Quadtree. The value
@@ -61,7 +60,6 @@ func (n *Node) NodeCount(count *int) {
 			n.children[i].NodeCount(count)
 		}
 	}
-
 }
 
 // Clear recursively clears each node from the Quadtree.
