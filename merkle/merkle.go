@@ -4,7 +4,6 @@
 package merkle
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -12,45 +11,38 @@ import (
 
 // The Merkle type represents a binary Merkle tree.
 type Merkle struct {
-	digest   [32]byte
-	encoded  string
-	children [2]*Merkle
+	digest  [32]byte
+	encoded string
+	left    *Merkle
+	right   *Merkle
+	level   int
+	nodes   int
 }
 
 func (m *Merkle) String() string {
-	var s string
-
-	s = fmt.Sprintf("%s\n", m.encoded)
-
-	if m.children[0] != nil {
-		s = s + fmt.Sprintf("  %s", m.children[0].String())
-	}
-
-	if m.children[1] != nil {
-		s = s + fmt.Sprintf("  %s", m.children[1].String())
-	}
-
-	return s
+	return fmt.Sprintf("Depth: %d Nodes: %d Digest: %s", m.level, m.nodes, m.encoded)
 }
 
 // Equal returns true if two Merkle trees are equivalent
 func (m *Merkle) Equal(m2 *Merkle) bool {
-	return bytes.Equal(m.digest[:], m2.digest[:])
+	return m.encoded == m2.encoded
 }
 
-// Diff returns a slice of digests from m2 which are different from those in m1.
-func (m *Merkle) Diff(m2 *Merkle, diffs *[][32]byte) {
-	if m.Equal(m2) {
-		return
+// Diff returns a slice of encoded digests from m2 which are different from
+// those in m1.
+func (m *Merkle) Diff(m2 *Merkle, diffs *[]string) {
+
+	if m.left != nil {
+		m.left.Diff(m2.left, diffs)
 	}
 
-	if m.children[0] == nil {
-		*diffs = append(*diffs, m2.digest)
-	} else {
-		m.children[0].Diff(m2.children[0], diffs)
-		if m.children[1] != nil {
-			m.children[1].Diff(m2.children[1], diffs)
-		}
+	if m.right != nil {
+		m.right.Diff(m2.right, diffs)
+	}
+
+	// We are in a leaf node. Do our comparison.
+	if m.left == nil && m.encoded != m2.encoded {
+		*diffs = append(*diffs, m2.encoded)
 	}
 }
 
@@ -61,6 +53,8 @@ func newLeafNode(block []byte) *Merkle {
 
 	m.digest = sha256.Sum256(block)
 	m.encoded = hex.EncodeToString(m.digest[:])
+	m.level = 0
+	m.nodes = 1
 
 	return m
 }
@@ -71,13 +65,16 @@ func newMerkleNode(leaf1, leaf2 *Merkle) *Merkle {
 
 	if leaf2 == nil {
 		m.digest = leaf1.digest
+		m.nodes = leaf1.nodes
 	} else {
 		m.digest = sha256.Sum256(append(leaf1.digest[:], leaf2.digest[:]...))
+		m.nodes = leaf1.nodes + leaf2.nodes
 	}
 
 	m.encoded = hex.EncodeToString(m.digest[:])
-	m.children[0] = leaf1
-	m.children[1] = leaf2
+	m.left = leaf1
+	m.right = leaf2
+	m.level = leaf1.level + 1
 
 	return m
 }
