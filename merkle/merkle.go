@@ -7,25 +7,30 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
+	"fmt"
 )
 
 // The Merkle type represents a binary Merkle tree.
 type Merkle struct {
 	digest   [32]byte
-	Encoded  string     `json: digest`
-	Children [2]*Merkle `json: children`
+	encoded  string
+	children [2]*Merkle
 }
 
-func (m *Merkle) Json() ([]byte, error) {
-	var data []byte
+func (m *Merkle) String() string {
+	var s string
 
-	data, err := json.MarshalIndent(m, "", "  ")
-	if err != nil {
-		return data, err
+	s = fmt.Sprintf("%s\n", m.encoded)
+
+	if m.children[0] != nil {
+		s = s + fmt.Sprintf("  %s", m.children[0].String())
 	}
 
-	return data, nil
+	if m.children[1] != nil {
+		s = s + fmt.Sprintf("  %s", m.children[1].String())
+	}
+
+	return s
 }
 
 // Equal returns true if two Merkle trees are equivalent
@@ -39,12 +44,12 @@ func (m *Merkle) Diff(m2 *Merkle, diffs *[][32]byte) {
 		return
 	}
 
-	if m.Children[0] == nil {
+	if m.children[0] == nil {
 		*diffs = append(*diffs, m2.digest)
 	} else {
-		m.Children[0].Diff(m2.Children[0], diffs)
-		if m.Children[1] != nil {
-			m.Children[1].Diff(m2.Children[1], diffs)
+		m.children[0].Diff(m2.children[0], diffs)
+		if m.children[1] != nil {
+			m.children[1].Diff(m2.children[1], diffs)
 		}
 	}
 }
@@ -55,7 +60,7 @@ func newLeafNode(block []byte) *Merkle {
 	m := new(Merkle)
 
 	m.digest = sha256.Sum256(block)
-	m.Encoded = hex.EncodeToString(m.digest[:])
+	m.encoded = hex.EncodeToString(m.digest[:])
 
 	return m
 }
@@ -70,9 +75,9 @@ func newMerkleNode(leaf1, leaf2 *Merkle) *Merkle {
 		m.digest = sha256.Sum256(append(leaf1.digest[:], leaf2.digest[:]...))
 	}
 
-	m.Encoded = hex.EncodeToString(m.digest[:])
-	m.Children[0] = leaf1
-	m.Children[1] = leaf2
+	m.encoded = hex.EncodeToString(m.digest[:])
+	m.children[0] = leaf1
+	m.children[1] = leaf2
 
 	return m
 }

@@ -1,6 +1,7 @@
 package merkle
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -11,9 +12,12 @@ func TestMerkle(t *testing.T) {
 	b4 := []byte("ddddd")
 	b5 := []byte("eeeee")
 
+	blocks0 := [][]byte{b1, b2, b3}
 	blocks1 := [][]byte{b1, b2, b3, b4, b5}
 	blocks2 := [][]byte{b5, b4, b3, b2, b1}
 
+	m0 := NewMerkle(blocks0)
+	fmt.Println(m0.String())
 	m1 := NewMerkle(blocks1)
 	m2 := NewMerkle(blocks1)
 	m3 := NewMerkle(blocks2)
