@@ -6,12 +6,26 @@ package merkle
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 )
 
 // The Merkle type represents a binary Merkle tree.
 type Merkle struct {
 	digest   [32]byte
-	children [2]*Merkle
+	Encoded  string     `json: digest`
+	Children [2]*Merkle `json: children`
+}
+
+func (m *Merkle) Json() ([]byte, error) {
+	var data []byte
+
+	data, err := json.MarshalIndent(m, "", "  ")
+	if err != nil {
+		return data, err
+	}
+
+	return data, nil
 }
 
 // Equal returns true if two Merkle trees are equivalent
@@ -25,38 +39,74 @@ func (m *Merkle) Diff(m2 *Merkle, diffs *[][32]byte) {
 		return
 	}
 
-	if m.children[0] == nil {
+	if m.Children[0] == nil {
 		*diffs = append(*diffs, m2.digest)
 	} else {
-		m.children[0].Diff(m2.children[0], diffs)
-		m.children[1].Diff(m2.children[1], diffs)
+		m.Children[0].Diff(m2.Children[0], diffs)
+		if m.Children[1] != nil {
+			m.Children[1].Diff(m2.Children[1], diffs)
+		}
 	}
 }
 
-
-// Recursively build a Merkle tree using the slice of byte slices.
-func NewMerkle(blocks [][]byte) *Merkle {
-	var data []byte
+// newLeafNode returns a new leaf node in the Merkle tree created from the
+// given block.
+func newLeafNode(block []byte) *Merkle {
 	m := new(Merkle)
 
-	switch len(blocks) {
-	case 1:
-		m.children[0] = &Merkle{digest: sha256.Sum256(blocks[0])}
-		data = m.children[0].digest[:]
-	case 2:
-		m.children[0] = &Merkle{digest: sha256.Sum256(blocks[0])}
-		m.children[1] = &Merkle{digest: sha256.Sum256(blocks[1])}
-		data = append(m.children[0].digest[:], m.children[1].digest[:]...)
-
-	default:
-		half := len(blocks) / 2
-
-		m.children[0] = NewMerkle(blocks[:half])
-		m.children[1] = NewMerkle(blocks[half:])
-		data = append(m.children[0].digest[:], m.children[1].digest[:]...)
-	}
-
-	m.digest = sha256.Sum256(data)
+	m.digest = sha256.Sum256(block)
+	m.Encoded = hex.EncodeToString(m.digest[:])
 
 	return m
+}
+
+// newMerkleNode returns a new merkle node created from the give leaf nodes.
+func newMerkleNode(leaf1, leaf2 *Merkle) *Merkle {
+	m := new(Merkle)
+
+	if leaf2 == nil {
+		m.digest = leaf1.digest
+	} else {
+		m.digest = sha256.Sum256(append(leaf1.digest[:], leaf2.digest[:]...))
+	}
+
+	m.Encoded = hex.EncodeToString(m.digest[:])
+	m.Children[0] = leaf1
+	m.Children[1] = leaf2
+
+	return m
+}
+
+// Build a Merkle tree using the slice of byte slices.
+func NewMerkle(blocks [][]byte) *Merkle {
+	var leaves []*Merkle
+
+	// Build our leaf nodes
+	for i, _ := range blocks {
+		leaves = append(leaves, newLeafNode(blocks[i]))
+	}
+
+	// Build parent nodes until there is only one parent.
+	for {
+		if len(leaves) == 1 {
+			break
+		}
+
+		var newLeaves []*Merkle
+
+		// Create new nodes from pairs of nodes
+		for i := 0; i < len(leaves)-1; i += 2 {
+			newLeaves = append(newLeaves, newMerkleNode(leaves[i], leaves[i+1]))
+		}
+
+		// Append the remaining node when there are an uneven number.
+		if len(leaves)%2 != 0 {
+			newLeaves = append(newLeaves, newMerkleNode(leaves[len(leaves)-1], nil))
+		}
+
+		leaves = nil
+		leaves = append(leaves, newLeaves...)
+	}
+
+	return leaves[0]
 }
