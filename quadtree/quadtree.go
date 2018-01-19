@@ -96,15 +96,15 @@ func (n *Node) split() {
 	}
 }
 
-// Index returns the index value of the child, if any, that contains the given
-// value.
+// Index returns the index value of the child, if any, that contains the
+// center point of the given value.
 func (n *Node) index(v Boxer) int {
 	if n.children[0] == nil {
 		return -1
 	}
 
 	for i, _ := range n.children {
-		if n.children[i].boundingBox.Contains(v.Box()) {
+		if n.children[i].boundingBox.ContainsCenter(v.Box()) {
 			return i
 		}
 	}
@@ -117,7 +117,7 @@ func (n *Node) index(v Boxer) int {
 // is added to this node. Split the node if it is full.
 func (n *Node) Insert(v Boxer) {
 	// If this node does not contain the given box return.
-	if !n.boundingBox.Contains(v.Box()) {
+	if !n.boundingBox.ContainsCenter(v.Box()) {
 		return
 	}
 
@@ -125,6 +125,7 @@ func (n *Node) Insert(v Boxer) {
 
 	if i == -1 {
 		n.values = append(n.values, v)
+
 		if len(n.values) > maxNodeSize {
 			n.split()
 		}
