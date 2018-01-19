@@ -4,8 +4,8 @@ import (
 	"fmt"
 )
 
-// Box defines an axis-aligned bounding box using the (x,y) value of the top
-// left corner along with the width and height of the box.
+// Box defines an axis-aligned bounding box using the (x,y) value of the
+// bottom, left corner along with the width and height of the box.
 type Box struct {
 	x      int
 	y      int
@@ -14,7 +14,7 @@ type Box struct {
 }
 
 func (b *Box) String() string {
-	return fmt.Sprintf("(%d, %d), (%d, %d)", b.Left(), b.Top(), b.Right(), b.Bottom())
+	return fmt.Sprintf("(%d, %d), (%d, %d)", b.Left(), b.Bottom(), b.Right(), b.Top())
 }
 
 // Left returns the x-value of the left side of the box.
@@ -24,10 +24,20 @@ func (b *Box) Left() int { return b.x }
 func (b *Box) Right() int { return b.x + b.width }
 
 // Top returns the y-value of the top side of the box.
-func (b *Box) Top() int { return b.y }
+func (b *Box) Top() int { return b.y + b.height }
 
 // Bottom returns the y-value of the bottom side of the box.
-func (b *Box) Bottom() int { return b.y - b.height }
+func (b *Box) Bottom() int { return b.y }
+
+// CenterX returns the x value of the center of the box
+func (b *Box) CenterX() int {
+	return b.x + int(b.width/2)
+}
+
+// CenterY returns the y value of the center of the box
+func (b *Box) CenterY() int {
+	return b.y + int(b.height/2)
+}
 
 // Quarter splits a box into its four quadrants starting at the top right
 // quadrant and going counter-clockwise.
@@ -37,10 +47,10 @@ func (b *Box) Quarter() [4]*Box {
 	w := int(b.width / 2)
 	h := int(b.height / 2)
 
-	quarters[0] = NewBox(b.x+w, b.y, w, h)   // Top Right
-	quarters[1] = NewBox(b.x, b.y, w, h)     // Top Left
-	quarters[2] = NewBox(b.x, b.y+h, w, h)   // Bottom Left
-	quarters[3] = NewBox(b.x+w, b.y+h, w, h) // Bottom Right
+	quarters[0] = NewBox(b.Left()+w, b.Bottom()+h, w, h) // Top Right
+	quarters[1] = NewBox(b.Left(), b.Bottom()+h, w, h)   // Top Left
+	quarters[2] = NewBox(b.Left(), b.Bottom(), w, h)     // Bottom Left
+	quarters[3] = NewBox(b.Left()+w, b.Bottom(), w, h)   // Bottom Right
 
 	return quarters
 }
@@ -49,6 +59,15 @@ func (b *Box) Quarter() [4]*Box {
 func (b *Box) Contains(c *Box) bool {
 	x := (b.Left() <= c.Left()) && (b.Right() >= c.Right())
 	y := (b.Top() >= c.Top()) && (b.Bottom() <= c.Bottom())
+
+	return x && y
+}
+
+// ContainsCenter returns true if the center of the given box is contained by
+// this box.
+func (b *Box) ContainsCenter(c *Box) bool {
+	x := (b.Left() <= c.CenterX()) && (b.Right() >= c.CenterX())
+	y := (b.Top() >= c.CenterY()) && (b.Bottom() <= c.CenterY())
 
 	return x && y
 }
