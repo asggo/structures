@@ -1,3 +1,9 @@
+package set
+
+import (
+	"testing"
+)
+
 func TestStringSet(t *testing.T) {
 	s := NewStringSet([]string{})
 

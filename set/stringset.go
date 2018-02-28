@@ -1,3 +1,8 @@
+package set
+
+import (
+	"sort"
+)
 
 // Set defines a new set of strings.
 type StringSet struct {
