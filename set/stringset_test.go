@@ -45,6 +45,14 @@ func TestStringSet(t *testing.T) {
 	union := all.Union(odd)
 	diff := all.Difference(even)
 
+	if !even.Subset(all) {
+		t.Error("Even should be a subset of all.")
+	}
+
+	if all.Subset(odd) {
+		t.Error("All should not be a subset of odd.")
+	}
+
 	if !intersect.Equal(even) {
 		t.Error("The intersection of all and even should be even.")
 	}

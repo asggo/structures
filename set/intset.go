@@ -48,6 +48,19 @@ func (s *IntSet) Size() int {
 	return len(s.members)
 }
 
+// Subset returns true if every member of this set is contained in the given
+// set.
+func (s *IntSet) Subset(y *IntSet) bool {
+
+	for _, m := range s.Members() {
+		if !y.Contains(m) {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Equal returns true if the given set is the same length and contains all of the
 // same members as this set.
 func (s *IntSet) Equal(y *IntSet) bool {
