@@ -28,6 +28,11 @@ func (m *Merkle) Equal(m2 *Merkle) bool {
 	return m.encoded == m2.encoded
 }
 
+// Digest returns the hex encoded digest of the Merkle tree
+func (m *Merkle) Digest() string {
+	return m.encoded
+}
+
 // Diff returns a slice of encoded digests from m2 which are different from
 // those in m1.
 func (m *Merkle) Diff(m2 *Merkle, diffs *[]string) {
