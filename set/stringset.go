@@ -1,7 +1,9 @@
 package set
 
 import (
+	"io/ioutil"
 	"sort"
+	"strings"
 )
 
 // Set defines a new set of strings.
@@ -120,7 +122,7 @@ func (s *StringSet) Difference(y *StringSet) *StringSet {
 	return d
 }
 
-// NewStringSet returns a new set of integers containing the unique strings in
+// NewStringSet returns a new set of strings containing the unique strings in
 // the members slice.
 func NewStringSet(members []string) *StringSet {
 	i := new(StringSet)
@@ -131,4 +133,17 @@ func NewStringSet(members []string) *StringSet {
 	}
 
 	return i
+}
+
+// NewStringSetFromFile returns a new set of strings containing the unique
+// strings in a new line delimited file.
+func NewStringSetFromFile(filename string) (*StringSet, error) {
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	members := strings.Split(string(content), "\n")
+
+	return NewStringSet(members, nil)
 }
