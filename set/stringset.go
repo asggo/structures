@@ -145,5 +145,5 @@ func NewStringSetFromFile(filename string) (*StringSet, error) {
 
 	members := strings.Split(string(content), "\n")
 
-	return NewStringSet(members, nil)
+	return NewStringSet(members), nil
 }
